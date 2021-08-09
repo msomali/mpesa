@@ -2,6 +2,8 @@ package mpesa
 
 import (
 	"context"
+	"fmt"
+	"github.com/techcraftlabs/mpesa/pkg/models"
 	"io"
 	"net/http"
 )
@@ -20,6 +22,13 @@ var (
 		Currency:        "TZS",
 		Description:     "vodacomTZN",
 	}
+)
+
+const (
+
+	//https://openapi.m-pesa.com:443/sandbox/ipg/v2/vodacomTZN/getSession/
+	defBasePath = "openapi.m-pesa.com"
+	defSessionKeyEndpoint = "getSession"
 )
 
 const (
@@ -66,6 +75,7 @@ type (
 
 	Platform int
 	Request  struct {
+		Method string
 		Type     RequestType
 		Endpoint string
 		Payload  interface{}
@@ -82,6 +92,54 @@ type (
 	}
 )
 
-func (c *Client)Send(ctx context.Context, request *Request, v interface{}) error {
+func (client *Client)SessionKey(ctx context.Context, platform Platform, market Market)(response models.SessionResponse,err error){
+
+	headers := map[string]interface{}{
+		"Content-Type":"application/json",
+	}
+
+	url := fmt.Sprintf("https://%s",defSessionKeyEndpoint)
+	request := &Request{
+		Type:     0,
+		Endpoint: url,
+		Payload:  nil,
+		Headers:  headers,
+		Market:   &market,
+		Platform: platform,
+	}
+	err = client.send(ctx,request, &response)
+	return response,err
+}
+
+func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
+	//url := generateRequestURL(defBasePath,request.Platform, *request.Market,request.Endpoint)
+	req, err := request.newRequestWithContext(ctx)
+	if err != nil{
+		return err
+	}
+	resp, err := client.Http.Do(req)
+
+	if err != nil{
+		return err
+	}
+	fmt.Printf("%v\n",resp)
 	return nil
+}
+
+func generateRequestURL(base string, platform Platform, market Market, endpoint string) string {
+	var marketStr, platformStr string
+	marketStr = market.URLContextValue
+	switch platform {
+	case SANDBOX:
+		platformStr = "sandbox"
+
+	case OPENAPI:
+		platformStr = "openapi"
+	}
+
+	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/",base,platformStr,marketStr,endpoint)
+}
+
+func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request,error){
+	return nil, nil
 }
