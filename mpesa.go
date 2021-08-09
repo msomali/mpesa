@@ -126,6 +126,21 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	return nil
 }
 
+//generateEncryptedKey
+//To generate your Session Key for the sandbox and live environments:
+//1.	Log into OpenAPI with a developer account
+//2.	On the APPLICATION page, click Create New Application. Creating an application will generate your unique API Application Key needed to authorise and authenticate your application on the server
+//3.	Type your name and version number for the application and select the products you wish to use. (The application can be configured any time). Save your new application.
+//4.	Copy and save the API Key.
+//5.	Copy the Public Key from the below section.
+//6.	Generate a decoded Base64 string from the Public Key
+//7.	Generate an instance of an RSA cipher and use the Base 64 string as the input
+//8.	Encode the API Key with the RSA cipher and digest as Base64 string format
+//9.	The result is your encrypted API Key.
+func generateEncryptedKey()(string,error){
+	return "",nil
+}
+
 func generateRequestURL(base string, platform Platform, market Market, endpoint string) string {
 	var marketStr, platformStr string
 	marketStr = market.URLContextValue
