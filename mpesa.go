@@ -2,6 +2,10 @@ package mpesa
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha1"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"github.com/techcraftlabs/mpesa/pkg/models"
@@ -28,7 +32,7 @@ var (
 const (
 
 	//https://openapi.m-pesa.com:443/sandbox/ipg/v2/vodacomTZN/getSession/
-	defBasePath = "openapi.m-pesa.com"
+	defBasePath           = "openapi.m-pesa.com"
 	defSessionKeyEndpoint = "getSession"
 )
 
@@ -63,6 +67,7 @@ type (
 		Version         string
 		Description     string
 		APIKey          string
+		PublicKey       string
 		SessionLifetime int64
 		TrustedSources  []string
 	}
@@ -76,7 +81,7 @@ type (
 
 	Platform int
 	Request  struct {
-		Method string
+		Method   string
 		Type     RequestType
 		Endpoint string
 		Payload  interface{}
@@ -93,13 +98,19 @@ type (
 	}
 )
 
-func (client *Client)SessionKey(ctx context.Context, platform Platform, market Market)(response models.SessionResponse,err error){
+func (client *Client) SessionKey(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
 
+	token, err := generateEncryptedKey(client.APIKey,client.PublicKey)
+	if err != nil{
+		return response,err
+	}
 	headers := map[string]interface{}{
-		"Content-Type":"application/json",
+		"Content-Type": "application/json",
+		"Origin":"*",
+		"Authorization":fmt.Sprintf("Bearer %s",token),
 	}
 
-	url := fmt.Sprintf("https://%s",defSessionKeyEndpoint)
+	url := fmt.Sprintf("https://%s", defSessionKeyEndpoint)
 	request := &Request{
 		Type:     0,
 		Endpoint: url,
@@ -108,22 +119,22 @@ func (client *Client)SessionKey(ctx context.Context, platform Platform, market M
 		Market:   &market,
 		Platform: platform,
 	}
-	err = client.send(ctx,request, &response)
-	return response,err
+	err = client.send(ctx, request, &response)
+	return response, err
 }
 
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
 	//url := generateRequestURL(defBasePath,request.Platform, *request.Market,request.Endpoint)
 	req, err := request.newRequestWithContext(ctx)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	resp, err := client.Http.Do(req)
 
-	if err != nil{
+	if err != nil {
 		return err
 	}
-	fmt.Printf("%v\n",resp)
+	fmt.Printf("%v\n", resp)
 	return nil
 }
 
@@ -138,14 +149,33 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 //7.	Generate an instance of an RSA cipher and use the Base 64 string as the input
 //8.	Encode the API Key with the RSA cipher and digest as Base64 string format
 //9.	The result is your encrypted API Key.
-func generateEncryptedKey(apiKey,pubKey string)(string,error){
-	decodedBase64,err := base64.StdEncoding.DecodeString(pubKey)
-	if err != nil{
-		return "", fmt.Errorf("could not decode pub key to Base64 string: %w",err)
+func generateEncryptedKey(apiKey, pubKey string) (string, error) {
+	decodedBase64, err := base64.StdEncoding.DecodeString(pubKey)
+	if err != nil {
+		return "", fmt.Errorf("could not decode pub key to Base64 string: %w", err)
 	}
-	decodedBase64Str := string(decodedBase64)
-	fmt.Printf("%v\n",decodedBase64Str)
-	return "",nil
+
+	publicKeyInterface, err := x509.ParsePKIXPublicKey(decodedBase64)
+	if err != nil {
+		return "", fmt.Errorf("could not parse encoded public key (encryption key) : %w", err)
+	}
+
+	//check if the public key is RSA public key
+	publicKey, isRSAPublicKey := publicKeyInterface.(*rsa.PublicKey)
+	if !isRSAPublicKey {
+		return "", fmt.Errorf("public key parsed is not an RSA public key : %w", err)
+	}
+
+	msg := []byte(apiKey)
+
+	encrypted, err := rsa.EncryptOAEP(sha1.New(), rand.Reader, publicKey, msg, nil)
+
+	if err != nil {
+		return "", fmt.Errorf("could not encrypt api key using generated public key: %w", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(encrypted), nil
+
 }
 
 func generateRequestURL(base string, platform Platform, market Market, endpoint string) string {
@@ -159,9 +189,9 @@ func generateRequestURL(base string, platform Platform, market Market, endpoint 
 		platformStr = "openapi"
 	}
 
-	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/",base,platformStr,marketStr,endpoint)
+	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/", base, platformStr, marketStr, endpoint)
 }
 
-func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request,error){
+func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, error) {
 	return nil, nil
 }
