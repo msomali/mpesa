@@ -53,3 +53,24 @@ func Test_generateRequestURL(t *testing.T) {
 		})
 	}
 }
+
+func TestRequestType_nameValue(t *testing.T) {
+	tests := []struct {
+		name string
+		t    RequestType
+		want string
+	}{
+		{
+			name: "generate session key name",
+			t:    GenerateSessionKey,
+			want: "session key",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.t.nameValue(); got != tt.want {
+				t.Errorf("nameValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

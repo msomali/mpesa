@@ -1,16 +1,21 @@
 package mpesa
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/techcraftlabs/mpesa/pkg/models"
 	"io"
 	"net/http"
+	"net/http/httputil"
+	"strings"
 )
 
 var (
@@ -85,7 +90,7 @@ type (
 		Type     RequestType
 		Endpoint string
 		Payload  interface{}
-		Headers  map[string]interface{}
+		Headers  map[string]string
 		Market   *Market
 		Platform Platform
 	}
@@ -98,21 +103,30 @@ type (
 	}
 )
 
+func (t RequestType) nameValue() string {
+	values := map[int]string{
+		0 :"session key",
+		1 :"c2b single stage",
+	}
+
+	return values[int(t)]
+}
+
 func (client *Client) SessionKey(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
 
-	token, err := generateEncryptedKey(client.APIKey,client.PublicKey)
-	if err != nil{
-		return response,err
+	token, err := generateEncryptedKey(client.APIKey, client.PublicKey)
+	if err != nil {
+		return response, err
 	}
-	headers := map[string]interface{}{
-		"Content-Type": "application/json",
-		"Origin":"*",
-		"Authorization":fmt.Sprintf("Bearer %s",token),
+	headers := map[string]string{
+		"Content-Type":  "application/json",
+		"Origin":        "*",
+		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
 	url := fmt.Sprintf("https://%s", defSessionKeyEndpoint)
 	request := &Request{
-		Type:     0,
+		Type:     GenerateSessionKey,
 		Endpoint: url,
 		Payload:  nil,
 		Headers:  headers,
@@ -124,17 +138,33 @@ func (client *Client) SessionKey(ctx context.Context, platform Platform, market 
 }
 
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
-	//url := generateRequestURL(defBasePath,request.Platform, *request.Market,request.Endpoint)
+
+	//creates http request with context
 	req, err := request.newRequestWithContext(ctx)
+
 	if err != nil {
 		return err
+	}
+
+	if v == nil {
+		return errors.New("v interface can not be empty")
 	}
 	resp, err := client.Http.Do(req)
 
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%v\n", resp)
+
+	contentType := resp.Header.Get("Content-Type")
+
+	if strings.Contains(contentType, "application/json") {
+		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+			if err != io.EOF {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -193,5 +223,75 @@ func generateRequestURL(base string, platform Platform, market Market, endpoint 
 }
 
 func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, error) {
-	return nil, nil
+
+	var buffer io.Reader
+
+	if r.Payload != nil{
+		buf, err := json.Marshal(r.Payload)
+		if err != nil {
+			return nil, err
+		}
+
+		buffer = bytes.NewBuffer(buf)
+	}
+
+	url := generateRequestURL(defBasePath,r.Platform, *r.Market,r.Endpoint)
+	req, err := http.NewRequestWithContext(ctx, r.Method, url, buffer)
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range r.Headers {
+		req.Header.Add(key, value)
+	}
+
+	return req, nil
+
+}
+
+
+//func (client *Client) LogPayload(t internal.PayloadType, prefix string, payload interface{}) {
+//	buf, _ := internal.MarshalPayload(t, payload)
+//	_, _ = client.Logger.Write([]byte(fmt.Sprintf("%s: %s\n\n", prefix, buf.String())))
+//}
+
+// Log is called to print the details of http.Request sent from Tigo during
+// callback, namecheck or ussd payment. It is used for debugging purposes
+func (client *Client) Log(name string, request *http.Request) {
+
+	if request != nil {
+		reqDump, _ := httputil.DumpRequest(request, true)
+		_, err := fmt.Fprintf(client.Logger, "%s REQUEST: %s\n", name, reqDump)
+		if err != nil {
+			fmt.Printf("error while logging %s request: %v\n",
+				strings.ToLower(name), err)
+			return
+		}
+		return
+	}
+	return
+}
+
+// LogOut is like Log except this is for outgoing client requests:
+// http.Request that is supposed to be sent to tigo
+func (client *Client) LogOut(name string, request *http.Request, response *http.Response) {
+
+	if request != nil {
+		reqDump, _ := httputil.DumpRequestOut(request, true)
+		_, err := fmt.Fprintf(client.Logger, "%s REQUEST: %s\n", name, reqDump)
+		if err != nil {
+			fmt.Printf("error while logging %s request: %v\n",
+				strings.ToLower(name), err)
+		}
+	}
+
+	if response != nil {
+		respDump, _ := httputil.DumpResponse(response, true)
+		_, err := fmt.Fprintf(client.Logger, "%s RESPONSE: %s\n", name, respDump)
+		if err != nil {
+			fmt.Printf("error while logging %s response: %v\n",
+				strings.ToLower(name), err)
+		}
+	}
+
+	return
 }
