@@ -2,6 +2,7 @@ package mpesa
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/techcraftlabs/mpesa/pkg/models"
 	"io"
@@ -137,7 +138,13 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 //7.	Generate an instance of an RSA cipher and use the Base 64 string as the input
 //8.	Encode the API Key with the RSA cipher and digest as Base64 string format
 //9.	The result is your encrypted API Key.
-func generateEncryptedKey()(string,error){
+func generateEncryptedKey(apiKey,pubKey string)(string,error){
+	decodedBase64,err := base64.StdEncoding.DecodeString(pubKey)
+	if err != nil{
+		return "", fmt.Errorf("could not decode pub key to Base64 string: %w",err)
+	}
+	decodedBase64Str := string(decodedBase64)
+	fmt.Printf("%v\n",decodedBase64Str)
 	return "",nil
 }
 
