@@ -151,6 +151,8 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	}
 	resp, err := client.Http.Do(req)
 
+	fmt.Printf("response: %v\n",resp)
+
 	if err != nil {
 		return err
 	}
