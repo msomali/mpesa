@@ -12,6 +12,16 @@ type (
 		PurchasedItemsDesc       string `json:"input_PurchasedItemsDesc"`
 	}
 
+	B2CSingleStageReq struct {
+		Amount                   string `json:"input_Amount"`
+		Country                  string `json:"input_Country"`
+		Currency                 string `json:"input_Currency"`
+		CustomerMSISDN           string `json:"input_CustomerMSISDN"`
+		ServiceProviderCode      string `json:"input_ServiceProviderCode"`
+		ThirdPartyConversationID string `json:"input_ThirdPartyConversationID"`
+		TransactionReference     string `json:"input_TransactionReference"`
+		PaymentItemsDesc         string `json:"input_PaymentItemsDesc"`
+	}
 	PushRequest struct {
 		ThirdPartyID string  `json:"id"`
 		Reference    string  `json:"reference"`

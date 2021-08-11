@@ -23,6 +23,7 @@ func main() {
 		PublicKey:              pubKey,
 		BasePath:               "openapi.m-pesa.com",
 		SessionLifetimeMinutes: 60,
+		ServiceProvideCode:     "000000",
 		TrustedSources:         nil,
 	}
 	var clientOpts []mpesa.ClientOpt
