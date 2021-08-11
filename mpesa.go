@@ -116,7 +116,7 @@ type (
 	}
 )
 
-func (t RequestType) Name() string {
+func (t RequestType) name() string {
 	values := map[int]string{
 		0 :"session key",
 		1 :"c2b single stage",
@@ -161,7 +161,7 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 		if debug{
 			req.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
 			res.Body = io.NopCloser(bytes.NewBuffer(resBodyBytes))
-			name := strings.ToUpper(request.Type.Name())
+			name := strings.ToUpper(request.Type.name())
 			client.logOut(name,req,res)
 		}
 	}(client.DebugMode)
