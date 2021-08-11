@@ -138,6 +138,7 @@ func NewClient(config *Config,market *Market, platform Platform, opts ...ClientO
 	up := time.Duration(config.SessionLifetimeMinutes) * time.Minute
 
 	expiration := time.Now().Add(up)
+
 	client := &Client{
 		Config:            config,
 		Http:              defHttpClient,
@@ -203,6 +204,9 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 		Headers:  headers,
 	}
 	err = client.send(ctx, request, &response)
+
+	//save the session id
+
 	return response, err
 }
 
@@ -257,6 +261,32 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	}
 
 	return nil
+}
+
+
+func (client *Client) getSessionID() (string, error) {
+	isAvailable := client.sessionID != nil && *client.sessionID != ""
+	notExpired := client.sessionExpiration.Sub(time.Now()).Minutes() > 1
+	if isAvailable && notExpired {
+		return *client.sessionID, nil
+	}
+
+	resp, err := client.SessionID(context.Background())
+	if err != nil{
+		return "", fmt.Errorf("could not fetch session id: %w",err)
+	}
+
+	if resp.OutputErr != ""{
+		return "", fmt.Errorf("could not fetch session id: %s",resp.OutputErr)
+	}
+
+	up := time.Duration(client.SessionLifetimeMinutes) * time.Minute
+	expiration := time.Now().Add(up)
+	client.sessionExpiration = expiration
+	client.sessionID = &resp.ID
+	
+	return resp.ID, err
+
 }
 
 func (client *Client) getEncryptionKey() (string, error) {
