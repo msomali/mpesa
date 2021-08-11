@@ -54,7 +54,7 @@ func main() {
 		ThirdPartyID: "djkefhjfugydefytfdtydcty",
 		Reference:    "ndkndkjdnkdjndkjnd",
 		Amount:       1000,
-		MSISDN:       "255765992153",
+		MSISDN:       "000000000001",
 		Desc:         "demo",
 	}
 	fmt.Printf("reponse error: %s\n", resp.OutputErr)

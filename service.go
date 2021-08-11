@@ -8,7 +8,6 @@ import (
 )
 
 type Service interface {
-
 	SessionID(ctx context.Context) (response models.SessionResponse, err error)
 	C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error)
 }
@@ -92,4 +91,3 @@ func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushReq
 
 	return response, nil
 }
-

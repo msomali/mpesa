@@ -171,8 +171,6 @@ func WithWriter(writer io.Writer) ClientOpt {
 	}
 }
 
-
-
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
 	var req *http.Request
 	var res *http.Response
@@ -317,38 +315,6 @@ func generateRequestURL(base string, platform Platform, market Market, endpoint 
 		platformStr = "openapi"
 	}
 	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/", base, platformStr, marketStr, endpoint)
-}
-
-func (r *Request) newRequestWithContext(ctx context.Context, market *Market, platform Platform) (*http.Request, error) {
-
-	var buffer io.Reader
-
-	url := generateRequestURL(defBasePath, platform, *market, r.Endpoint)
-	if r.Payload != nil {
-		buf, err := json.Marshal(r.Payload)
-		if err != nil {
-			return nil, err
-		}
-
-		buffer = bytes.NewBuffer(buf)
-		req, err := http.NewRequestWithContext(ctx, r.Method, url, buffer)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range r.Headers {
-			req.Header.Add(key, value)
-		}
-		return req, nil
-	}
-
-	req, err := http.NewRequestWithContext(ctx, r.Method, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	for key, value := range r.Headers {
-		req.Header.Add(key, value)
-	}
-	return req, nil
 }
 
 //func (client *Client) LogPayload(t internal.PayloadType, prefix string, payload interface{}) {
