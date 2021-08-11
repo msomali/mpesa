@@ -23,14 +23,14 @@ type (
 	}
 )
 
-func (f *FormatAdapter) SessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
+func (f *FormatAdapter) SessionID(ctx context.Context) (response models.SessionResponse, err error) {
 	fmt.Printf("just acknowledging the hustle in getting the session ID\n")
-	return f.Next.SessionID(ctx,platform,market)
+	return f.Next.SessionID(ctx)
 }
 
-func (l *LoggerAdapter) SessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
+func (l *LoggerAdapter) SessionID(ctx context.Context) (response models.SessionResponse, err error) {
 	l.Logger.Printf("getting session id from hommies")
-	return l.Next.SessionID(ctx,platform,market)
+	return l.Next.SessionID(ctx)
 }
 
 func Adapt(service Service, adapters ...Adapter) Service{

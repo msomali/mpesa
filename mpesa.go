@@ -35,7 +35,7 @@ var (
 	}
 
 	defClientLogger = os.Stderr
-	defHttpClient = http.DefaultClient
+	defHttpClient   = http.DefaultClient
 )
 
 const (
@@ -43,8 +43,6 @@ const (
 	//https://openapi.m-pesa.com:443/sandbox/ipg/v2/vodacomTZN/getSession/
 	defBasePath           = "openapi.m-pesa.com"
 	defSessionKeyEndpoint = "getSession"
-
-
 )
 
 const (
@@ -74,7 +72,7 @@ type (
 
 	//Service defines API for MPESA client
 	Service interface {
-		SessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error)
+		SessionID(ctx context.Context) (response models.SessionResponse, err error)
 	}
 	// Config contains details initialize in mpesa portal
 	// Applications require the following details:
@@ -110,29 +108,30 @@ type (
 		Endpoint string
 		Payload  interface{}
 		Headers  map[string]string
-		Market   *Market
-		Platform Platform
 	}
 	Client struct {
 		*Config
 		Http              *http.Client
 		DebugMode         bool
 		Logger            io.Writer
+		Market            *Market
+		Platform          Platform
 		encryptedApiKey   *string
+		sessionID         *string
 		sessionExpiration time.Time
 	}
 
 	ClientOpt func(client *Client)
 )
 
-func NewClient(config *Config, opts ...ClientOpt) (*Client, error) {
+func NewClient(config *Config,market *Market, platform Platform, opts ...ClientOpt) (*Client, error) {
 
-	encryptedKeyStr, err := generateEncryptedKey(config.APIKey,config.PublicKey)
-	if err != nil{
-		return nil, fmt.Errorf("could not generate encrypted api key: %w",err)
+	encryptedKeyStr, err := generateEncryptedKey(config.APIKey, config.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("could not generate encrypted api key: %w", err)
 	}
 
-	if config.SessionLifetimeMinutes <= 0{
+	if config.SessionLifetimeMinutes <= 0 {
 		return nil, fmt.Errorf("session lifetime (in minutes) can not be zero")
 	}
 
@@ -144,7 +143,10 @@ func NewClient(config *Config, opts ...ClientOpt) (*Client, error) {
 		Http:              defHttpClient,
 		DebugMode:         false,
 		Logger:            defClientLogger,
+		Market:            market,
+		Platform:          platform,
 		encryptedApiKey:   &encryptedKeyStr,
+		sessionID:         nil,
 		sessionExpiration: expiration,
 	}
 
@@ -152,7 +154,7 @@ func NewClient(config *Config, opts ...ClientOpt) (*Client, error) {
 		opt(client)
 	}
 
-	return client,nil
+	return client, nil
 }
 
 func WithDebugMode(debugMode bool) ClientOpt {
@@ -173,7 +175,6 @@ func WithWriter(writer io.Writer) ClientOpt {
 	}
 }
 
-
 func (t RequestType) name() string {
 	values := map[int]string{
 		0: "session key",
@@ -183,9 +184,9 @@ func (t RequestType) name() string {
 	return values[int(t)]
 }
 
-func (client *Client) SessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
+func (client *Client) SessionID(ctx context.Context) (response models.SessionResponse, err error) {
 
-	token, err := generateEncryptedKey(client.APIKey, client.PublicKey)
+	token, err := client.getEncryptionKey()
 	if err != nil {
 		return response, err
 	}
@@ -200,8 +201,6 @@ func (client *Client) SessionID(ctx context.Context, platform Platform, market M
 		Endpoint: defSessionKeyEndpoint,
 		Payload:  nil,
 		Headers:  headers,
-		Market:   &market,
-		Platform: platform,
 	}
 	err = client.send(ctx, request, &response)
 	return response, err
@@ -223,7 +222,7 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	}(client.DebugMode)
 
 	//creates http request with context
-	req, err := request.newRequestWithContext(ctx)
+	req, err := request.newRequestWithContext(ctx,client.Market,client.Platform)
 
 	if err != nil {
 		return err
@@ -260,11 +259,11 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	return nil
 }
 
-func (client *Client)getSessionID() (string,error) {
+func (client *Client) getEncryptionKey() (string, error) {
 	isAvailable := client.encryptedApiKey != nil && *client.encryptedApiKey != ""
-	notExpired := client.sessionExpiration.Sub(time.Now()).Minutes() > 1
-	if isAvailable && notExpired{
-		return *client.encryptedApiKey,nil
+	//notExpired := client.sessionExpiration.Sub(time.Now()).Minutes() > 1
+	if isAvailable {
+		return *client.encryptedApiKey, nil
 	}
 
 	return generateEncryptedKey(client.APIKey, client.PublicKey)
@@ -323,11 +322,11 @@ func generateRequestURL(base string, platform Platform, market Market, endpoint 
 	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/", base, platformStr, marketStr, endpoint)
 }
 
-func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, error) {
+func (r *Request) newRequestWithContext(ctx context.Context, market *Market,platform Platform) (*http.Request, error) {
 
 	var buffer io.Reader
 
-	url := generateRequestURL(defBasePath, r.Platform, *r.Market, r.Endpoint)
+	url := generateRequestURL(defBasePath, platform, *market, r.Endpoint)
 	if r.Payload != nil {
 		buf, err := json.Marshal(r.Payload)
 		if err != nil {
