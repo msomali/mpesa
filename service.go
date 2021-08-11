@@ -38,11 +38,6 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 		err1 := fmt.Errorf("could not fetch session id: %s", response.OutputErr)
 		return response, err1
 	}
-	//
-	//up := time.Duration(client.SessionLifetimeMinutes) * time.Minute
-	//expiration := time.Now().Add(up)
-	//client.sessionExpiration = expiration
-	//client.sessionID = &response.ID
 
 	return response, nil
 }

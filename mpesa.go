@@ -47,16 +47,7 @@ const (
 	defC2BSingleStageEndpoint = "c2bPayment/singleStage"
 )
 
-const (
-	GenerateSessionKey RequestType = iota
-	C2BSingleStage
-	B2CSingleStage
-	B2BSingleStage
-	Reversal
-	QueryTxnStatus
-	DirectDebitCreate
-	DirectDebitPayment
-)
+
 
 const (
 	SANDBOX Platform = 0
@@ -100,7 +91,7 @@ type (
 		Currency        string
 		Description     string
 	}
-	RequestType int
+
 
 	Platform int
 

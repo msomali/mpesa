@@ -8,6 +8,19 @@ import (
 	"net/http"
 )
 
+const (
+	GenerateSessionKey RequestType = iota
+	C2BSingleStage
+	B2CSingleStage
+	B2BSingleStage
+	Reversal
+	QueryTxnStatus
+	DirectDebitCreate
+	DirectDebitPayment
+)
+
+type RequestType int
+
 type Request struct {
 	Method      string
 	Type        RequestType
@@ -21,6 +34,12 @@ func (t RequestType) name() string {
 	values := map[int]string{
 		0: "session key",
 		1: "c2b single stage",
+		2: "b2c single stage",
+		3: "b2b single stage",
+		4: "reversal",
+		5: "query transaction status",
+		6: "direct debit create",
+		7: "direct debit payment",
 	}
 
 	return values[int(t)]
