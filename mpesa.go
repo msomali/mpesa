@@ -69,7 +69,7 @@ type (
 
 	//Service defines API for MPESA client
 	Service interface {
-		GetSessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error)
+		SessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error)
 	}
 	// Config contains details initialize in mpesa portal
 	// Applications require the following details:
@@ -125,7 +125,7 @@ func (t RequestType) name() string {
 	return values[int(t)]
 }
 
-func (client *Client) SessionKey(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
+func (client *Client) SessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error) {
 
 	token, err := generateEncryptedKey(client.APIKey, client.PublicKey)
 	if err != nil {

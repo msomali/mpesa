@@ -27,8 +27,17 @@ func main() {
 		DebugMode: true,
 		Logger:    os.Stderr,
 	}
+	fm := &mpesa.FormatAdapter{
+		Next: client,
+	}
 
-	resp, err := client.SessionKey(context.Background(),mpesa.SANDBOX,*mpesa.TanzaniaMarket)
+	logger := log.New(os.Stderr, "MPESA",log.Ldate | log.Ltime | log.Lshortfile)
+	lg := &mpesa.LoggerAdapter{
+		Logger: logger,
+		Next:   fm,
+	}
+
+	resp, err := lg.SessionID(context.Background(),mpesa.SANDBOX,*mpesa.TanzaniaMarket)
 	if err != nil{
 		log.Fatalln(err)
 	}
