@@ -206,8 +206,17 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 	err = client.send(ctx, request, &response)
 
 	//save the session id
+	if response.OutputErr != ""{
+		err1 := fmt.Errorf("could not fetch session id: %s",response.OutputErr)
+		return response,err1
+	}
+	//
+	//up := time.Duration(client.SessionLifetimeMinutes) * time.Minute
+	//expiration := time.Now().Add(up)
+	//client.sessionExpiration = expiration
+	//client.sessionID = &response.ID
 
-	return response, err
+	return response, nil
 }
 
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
@@ -264,6 +273,12 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 }
 
 
+
+//getSessionID examine if there is a session id saved as Client.sessionID
+//if it is available it checks if it has already expired or have more than
+//1 minute till expiration date and returns it
+//if the above conditions are not fulfilled it calls Client.SessionID
+//then save it and increment the expiration date
 func (client *Client) getSessionID() (string, error) {
 	isAvailable := client.sessionID != nil && *client.sessionID != ""
 	notExpired := client.sessionExpiration.Sub(time.Now()).Minutes() > 1
@@ -284,7 +299,7 @@ func (client *Client) getSessionID() (string, error) {
 	expiration := time.Now().Add(up)
 	client.sessionExpiration = expiration
 	client.sessionID = &resp.ID
-	
+
 	return resp.ID, err
 
 }
