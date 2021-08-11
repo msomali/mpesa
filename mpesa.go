@@ -36,13 +36,16 @@ var (
 
 	defClientLogger = os.Stderr
 	defHttpClient   = http.DefaultClient
+
+	_ Service = (*Client)(nil)
 )
 
 const (
 
 	//https://openapi.m-pesa.com:443/sandbox/ipg/v2/vodacomTZN/getSession/
-	defBasePath           = "openapi.m-pesa.com"
-	defSessionKeyEndpoint = "getSession"
+	defBasePath               = "openapi.m-pesa.com"
+	defSessionKeyEndpoint     = "getSession"
+	defC2BSingleStageEndpoint = "c2bPayment/singleStage"
 )
 
 const (
@@ -73,6 +76,7 @@ type (
 	//Service defines API for MPESA client
 	Service interface {
 		SessionID(ctx context.Context) (response models.SessionResponse, err error)
+		C2BSingleAsync(ctx context.Context, request models.PushRequest)(models.C2BSingleStageAsyncResponse,error)
 	}
 	// Config contains details initialize in mpesa portal
 	// Applications require the following details:
@@ -91,6 +95,7 @@ type (
 		APIKey                 string
 		PublicKey              string
 		SessionLifetimeMinutes uint64
+		ServiceProvideCode     string
 		TrustedSources         []string
 	}
 	Market struct {
@@ -124,7 +129,8 @@ type (
 	ClientOpt func(client *Client)
 )
 
-func NewClient(config *Config,market *Market, platform Platform, opts ...ClientOpt) (*Client, error) {
+
+func NewClient(config *Config, market *Market, platform Platform, opts ...ClientOpt) (*Client, error) {
 
 	encryptedKeyStr, err := generateEncryptedKey(config.APIKey, config.PublicKey)
 	if err != nil {
@@ -206,9 +212,9 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 	err = client.send(ctx, request, &response)
 
 	//save the session id
-	if response.OutputErr != ""{
-		err1 := fmt.Errorf("could not fetch session id: %s",response.OutputErr)
-		return response,err1
+	if response.OutputErr != "" {
+		err1 := fmt.Errorf("could not fetch session id: %s", response.OutputErr)
+		return response, err1
 	}
 	//
 	//up := time.Duration(client.SessionLifetimeMinutes) * time.Minute
@@ -218,6 +224,11 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 
 	return response, nil
 }
+
+func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
+	panic("implement me")
+}
+
 
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
 	var req *http.Request
@@ -235,7 +246,7 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	}(client.DebugMode)
 
 	//creates http request with context
-	req, err := request.newRequestWithContext(ctx,client.Market,client.Platform)
+	req, err := request.newRequestWithContext(ctx, client.Market, client.Platform)
 
 	if err != nil {
 		return err
@@ -272,8 +283,6 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	return nil
 }
 
-
-
 //getSessionID examine if there is a session id saved as Client.sessionID
 //if it is available it checks if it has already expired or have more than
 //1 minute till expiration date and returns it
@@ -287,12 +296,12 @@ func (client *Client) getSessionID() (string, error) {
 	}
 
 	resp, err := client.SessionID(context.Background())
-	if err != nil{
-		return "", fmt.Errorf("could not fetch session id: %w",err)
+	if err != nil {
+		return "", fmt.Errorf("could not fetch session id: %w", err)
 	}
 
-	if resp.OutputErr != ""{
-		return "", fmt.Errorf("could not fetch session id: %s",resp.OutputErr)
+	if resp.OutputErr != "" {
+		return "", fmt.Errorf("could not fetch session id: %s", resp.OutputErr)
 	}
 
 	up := time.Duration(client.SessionLifetimeMinutes) * time.Minute
@@ -367,7 +376,7 @@ func generateRequestURL(base string, platform Platform, market Market, endpoint 
 	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/", base, platformStr, marketStr, endpoint)
 }
 
-func (r *Request) newRequestWithContext(ctx context.Context, market *Market,platform Platform) (*http.Request, error) {
+func (r *Request) newRequestWithContext(ctx context.Context, market *Market, platform Platform) (*http.Request, error) {
 
 	var buffer io.Reader
 

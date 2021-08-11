@@ -44,6 +44,16 @@ func Test_generateRequestURL(t *testing.T) {
 			},
 			want: "https://openapi.m-pesa.com/sandbox/ipg/v2/vodafoneGHA/getSession/",
 		},
+		{
+			name: "test single stage endpoint",
+			args: args{
+				base:     defBasePath,
+				platform: SANDBOX,
+				market:   *TanzaniaMarket,
+				endpoint: defC2BSingleStageEndpoint,
+			},
+			want: "https://openapi.m-pesa.com/sandbox/ipg/v2/vodacomTZN/c2bPayment/singleStage/",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

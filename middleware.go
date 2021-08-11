@@ -23,6 +23,14 @@ type (
 	}
 )
 
+func (f *FormatAdapter) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
+	panic("implement me")
+}
+
+func (l *LoggerAdapter) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
+	panic("implement me")
+}
+
 func (f *FormatAdapter) SessionID(ctx context.Context) (response models.SessionResponse, err error) {
 	fmt.Printf("just acknowledging the hustle in getting the session ID\n")
 	return f.Next.SessionID(ctx)
