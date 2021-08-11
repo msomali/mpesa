@@ -33,5 +33,5 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("reponse: %v\n", resp)
+	fmt.Printf("reponse error: %s\n", resp.OutputErr)
 }

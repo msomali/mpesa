@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
+	"time"
 )
 
 var (
@@ -57,7 +58,19 @@ const (
 	OPENAPI Platform = 1
 )
 
+const (
+	defaultTimeout          = 60*time.Second
+	jsonContentTypeString   = "application/json"
+	xmlContentTypeString    = "text/xml"
+	appXMLContentTypeString = "application/xml"
+)
+
 type (
+
+	//Service defines API for MPESA client
+	Service interface {
+		GetSessionID(ctx context.Context, platform Platform, market Market) (response models.SessionResponse, err error)
+	}
 	// Config contains details initialize in mpesa portal
 	// Applications require the following details:
 	//•	Application Name – human-readable name of the application
@@ -103,7 +116,7 @@ type (
 	}
 )
 
-func (t RequestType) nameValue() string {
+func (t RequestType) Name() string {
 	values := map[int]string{
 		0 :"session key",
 		1 :"c2b single stage",
@@ -124,20 +137,34 @@ func (client *Client) SessionKey(ctx context.Context, platform Platform, market 
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
-	url := fmt.Sprintf("https://%s", defSessionKeyEndpoint)
 	request := &Request{
 		Type:     GenerateSessionKey,
-		Endpoint: url,
+		Endpoint: defSessionKeyEndpoint,
 		Payload:  nil,
 		Headers:  headers,
 		Market:   &market,
 		Platform: platform,
+
 	}
 	err = client.send(ctx, request, &response)
 	return response, err
 }
 
+
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
+	var req *http.Request
+	var res *http.Response
+
+	var reqBodyBytes []byte
+	var resBodyBytes []byte
+	defer func(debug bool) {
+		if debug{
+			req.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
+			res.Body = io.NopCloser(bytes.NewBuffer(resBodyBytes))
+			name := strings.ToUpper(request.Type.Name())
+			client.logOut(name,req,res)
+		}
+	}(client.DebugMode)
 
 	//creates http request with context
 	req, err := request.newRequestWithContext(ctx)
@@ -146,21 +173,28 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 		return err
 	}
 
+	if req.Body != nil{
+		reqBodyBytes, _ = io.ReadAll(req.Body)
+	}
+
 	if v == nil {
 		return errors.New("v interface can not be empty")
 	}
-	resp, err := client.Http.Do(req)
 
-	fmt.Printf("response: %v\n",resp)
+	req.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
+	res, err = client.Http.Do(req)
 
 	if err != nil {
 		return err
 	}
 
-	contentType := resp.Header.Get("Content-Type")
+	if res.Body != nil{
+		resBodyBytes, _ = io.ReadAll(res.Body)
+	}
 
+	contentType := res.Header.Get("Content-Type")
 	if strings.Contains(contentType, "application/json") {
-		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+		if err := json.NewDecoder(bytes.NewBuffer(resBodyBytes)).Decode(v); err != nil {
 			if err != io.EOF {
 				return err
 			}
@@ -172,7 +206,7 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 
 //generateEncryptedKey
 //To generate your Session Key for the sandbox and live environments:
-//1.	Log into OpenAPI with a developer account
+//1.	log into OpenAPI with a developer account
 //2.	On the APPLICATION page, click Create New Application. Creating an application will generate your unique API Application Key needed to authorise and authenticate your application on the server
 //3.	Type your name and version number for the application and select the products you wish to use. (The application can be configured any time). Save your new application.
 //4.	Copy and save the API Key.
@@ -228,6 +262,7 @@ func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, err
 
 	var buffer io.Reader
 
+	url := generateRequestURL(defBasePath,r.Platform, *r.Market,r.Endpoint)
 	if r.Payload != nil{
 		buf, err := json.Marshal(r.Payload)
 		if err != nil {
@@ -235,19 +270,24 @@ func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, err
 		}
 
 		buffer = bytes.NewBuffer(buf)
+		req, err := http.NewRequestWithContext(ctx, r.Method, url, buffer)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range r.Headers {
+			req.Header.Add(key, value)
+		}
+		return req, nil
 	}
 
-	url := generateRequestURL(defBasePath,r.Platform, *r.Market,r.Endpoint)
-	req, err := http.NewRequestWithContext(ctx, r.Method, url, buffer)
+	req, err := http.NewRequestWithContext(ctx, r.Method, url,nil)
 	if err != nil {
 		return nil, err
 	}
 	for key, value := range r.Headers {
 		req.Header.Add(key, value)
 	}
-
 	return req, nil
-
 }
 
 
@@ -256,9 +296,9 @@ func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, err
 //	_, _ = client.Logger.Write([]byte(fmt.Sprintf("%s: %s\n\n", prefix, buf.String())))
 //}
 
-// Log is called to print the details of http.Request sent from Tigo during
+// log is called to print the details of http.Request sent from Tigo during
 // callback, namecheck or ussd payment. It is used for debugging purposes
-func (client *Client) Log(name string, request *http.Request) {
+func (client *Client) log(name string, request *http.Request) {
 
 	if request != nil {
 		reqDump, _ := httputil.DumpRequest(request, true)
@@ -273,9 +313,9 @@ func (client *Client) Log(name string, request *http.Request) {
 	return
 }
 
-// LogOut is like Log except this is for outgoing client requests:
+// logOut is like log except this is for outgoing client requests:
 // http.Request that is supposed to be sent to tigo
-func (client *Client) LogOut(name string, request *http.Request, response *http.Response) {
+func (client *Client) logOut(name string, request *http.Request, response *http.Response) {
 
 	if request != nil {
 		reqDump, _ := httputil.DumpRequestOut(request, true)
