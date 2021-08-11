@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -15,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"strings"
 	"time"
 )
@@ -33,6 +33,9 @@ var (
 		Currency:        "TZS",
 		Description:     "vodacomTZN",
 	}
+
+	defClientLogger = os.Stderr
+	defHttpClient = http.DefaultClient
 )
 
 const (
@@ -40,6 +43,8 @@ const (
 	//https://openapi.m-pesa.com:443/sandbox/ipg/v2/vodacomTZN/getSession/
 	defBasePath           = "openapi.m-pesa.com"
 	defSessionKeyEndpoint = "getSession"
+
+
 )
 
 const (
@@ -59,7 +64,7 @@ const (
 )
 
 const (
-	defaultTimeout          = 60*time.Second
+	defaultTimeout          = 60 * time.Second
 	jsonContentTypeString   = "application/json"
 	xmlContentTypeString    = "text/xml"
 	appXMLContentTypeString = "application/xml"
@@ -81,13 +86,14 @@ type (
 	//•	TrustedSources – the originating caller can be limited to specific IP address(es) as an additional security measure.
 	//•	Products / Scope / Limits – the required API products for the application can be enabled and limits defined for each call.
 	Config struct {
-		Name            string
-		Version         string
-		Description     string
-		APIKey          string
-		PublicKey       string
-		SessionLifetime int64
-		TrustedSources  []string
+		Name                   string
+		Version                string
+		Description            string
+		BasePath               string
+		APIKey                 string
+		PublicKey              string
+		SessionLifetimeMinutes uint64
+		TrustedSources         []string
 	}
 	Market struct {
 		URLContextValue string
@@ -109,17 +115,69 @@ type (
 	}
 	Client struct {
 		*Config
-		Http      *http.Client
-		BasePath  string
-		DebugMode bool
-		Logger    io.Writer
+		Http              *http.Client
+		DebugMode         bool
+		Logger            io.Writer
+		encryptedApiKey   *string
+		sessionExpiration time.Time
 	}
+
+	ClientOpt func(client *Client)
 )
+
+func NewClient(config *Config, opts ...ClientOpt) (*Client, error) {
+
+	encryptedKeyStr, err := generateEncryptedKey(config.APIKey,config.PublicKey)
+	if err != nil{
+		return nil, fmt.Errorf("could not generate encrypted api key: %w",err)
+	}
+
+	if config.SessionLifetimeMinutes <= 0{
+		return nil, fmt.Errorf("session lifetime (in minutes) can not be zero")
+	}
+
+	up := time.Duration(config.SessionLifetimeMinutes) * time.Minute
+
+	expiration := time.Now().Add(up)
+	client := &Client{
+		Config:            config,
+		Http:              defHttpClient,
+		DebugMode:         false,
+		Logger:            defClientLogger,
+		encryptedApiKey:   &encryptedKeyStr,
+		sessionExpiration: expiration,
+	}
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client,nil
+}
+
+func WithDebugMode(debugMode bool) ClientOpt {
+	return func(client *Client) {
+		client.DebugMode = debugMode
+	}
+}
+
+func WithHTTPClient(httpd *http.Client) ClientOpt {
+	return func(client *Client) {
+		client.Http = httpd
+	}
+}
+
+func WithWriter(writer io.Writer) ClientOpt {
+	return func(client *Client) {
+		client.Logger = writer
+	}
+}
+
 
 func (t RequestType) name() string {
 	values := map[int]string{
-		0 :"session key",
-		1 :"c2b single stage",
+		0: "session key",
+		1: "c2b single stage",
 	}
 
 	return values[int(t)]
@@ -144,12 +202,10 @@ func (client *Client) SessionID(ctx context.Context, platform Platform, market M
 		Headers:  headers,
 		Market:   &market,
 		Platform: platform,
-
 	}
 	err = client.send(ctx, request, &response)
 	return response, err
 }
-
 
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
 	var req *http.Request
@@ -158,11 +214,11 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	var reqBodyBytes []byte
 	var resBodyBytes []byte
 	defer func(debug bool) {
-		if debug{
+		if debug {
 			req.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
 			res.Body = io.NopCloser(bytes.NewBuffer(resBodyBytes))
 			name := strings.ToUpper(request.Type.name())
-			client.logOut(name,req,res)
+			client.logOut(name, req, res)
 		}
 	}(client.DebugMode)
 
@@ -173,7 +229,7 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 		return err
 	}
 
-	if req.Body != nil{
+	if req.Body != nil {
 		reqBodyBytes, _ = io.ReadAll(req.Body)
 	}
 
@@ -188,7 +244,7 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 		return err
 	}
 
-	if res.Body != nil{
+	if res.Body != nil {
 		resBodyBytes, _ = io.ReadAll(res.Body)
 	}
 
@@ -202,6 +258,16 @@ func (client *Client) send(ctx context.Context, request *Request, v interface{})
 	}
 
 	return nil
+}
+
+func (client *Client)getSessionID() (string,error) {
+	isAvailable := client.encryptedApiKey != nil && *client.encryptedApiKey != ""
+	notExpired := client.sessionExpiration.Sub(time.Now()).Minutes() > 1
+	if isAvailable && notExpired{
+		return *client.encryptedApiKey,nil
+	}
+
+	return generateEncryptedKey(client.APIKey, client.PublicKey)
 }
 
 //generateEncryptedKey
@@ -234,7 +300,7 @@ func generateEncryptedKey(apiKey, pubKey string) (string, error) {
 
 	msg := []byte(apiKey)
 
-	encrypted, err := rsa.EncryptOAEP(sha1.New(), rand.Reader, publicKey, msg, nil)
+	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, msg)
 
 	if err != nil {
 		return "", fmt.Errorf("could not encrypt api key using generated public key: %w", err)
@@ -254,7 +320,6 @@ func generateRequestURL(base string, platform Platform, market Market, endpoint 
 	case OPENAPI:
 		platformStr = "openapi"
 	}
-
 	return fmt.Sprintf("https://%s/%s/ipg/v2/%s/%s/", base, platformStr, marketStr, endpoint)
 }
 
@@ -262,8 +327,8 @@ func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, err
 
 	var buffer io.Reader
 
-	url := generateRequestURL(defBasePath,r.Platform, *r.Market,r.Endpoint)
-	if r.Payload != nil{
+	url := generateRequestURL(defBasePath, r.Platform, *r.Market, r.Endpoint)
+	if r.Payload != nil {
 		buf, err := json.Marshal(r.Payload)
 		if err != nil {
 			return nil, err
@@ -280,7 +345,7 @@ func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, err
 		return req, nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, r.Method, url,nil)
+	req, err := http.NewRequestWithContext(ctx, r.Method, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +354,6 @@ func (r *Request) newRequestWithContext(ctx context.Context) (*http.Request, err
 	}
 	return req, nil
 }
-
 
 //func (client *Client) LogPayload(t internal.PayloadType, prefix string, payload interface{}) {
 //	buf, _ := internal.MarshalPayload(t, payload)
