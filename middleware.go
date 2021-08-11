@@ -24,11 +24,13 @@ type (
 )
 
 func (f *FormatAdapter) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
-	panic("implement me")
+	fmt.Printf("c2b from formatter")
+	return f.Next.C2BSingleAsync(ctx, request)
 }
 
 func (l *LoggerAdapter) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
-	panic("implement me")
+	l.Logger.Printf("making push payyyyy")
+	return l.Next.C2BSingleAsync(ctx, request)
 }
 
 func (f *FormatAdapter) SessionID(ctx context.Context) (response models.SessionResponse, err error) {
@@ -41,7 +43,7 @@ func (l *LoggerAdapter) SessionID(ctx context.Context) (response models.SessionR
 	return l.Next.SessionID(ctx)
 }
 
-func Adapt(service Service, adapters ...Adapter) Service{
+func Adapt(service Service, adapters ...Adapter) Service {
 	for _, adapter := range adapters {
 		service = adapter(service)
 	}

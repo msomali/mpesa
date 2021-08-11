@@ -9,9 +9,10 @@ type (
 	}
 
 	C2BSingleStageAsyncResponse struct {
-		ResponseCode             string `json:"output_ResponseCode"`
-		ResponseDesc             string `json:"output_ResponseDesc"`
-		ConversationID           string `json:"output_ConversationID"`
-		ThirdPartyConversationID string `json:"output_ThirdPartyConversationID"`
+		ResponseCode             string `json:"output_ResponseCode,omitempty"`
+		ResponseDesc             string `json:"output_ResponseDesc,omitempty"`
+		ConversationID           string `json:"output_ConversationID,omitempty"`
+		ThirdPartyConversationID string `json:"output_ThirdPartyConversationID,omitempty"`
+		OutputErr                string `json:"output_error,omitempty"`
 	}
 )

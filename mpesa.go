@@ -76,7 +76,7 @@ type (
 	//Service defines API for MPESA client
 	Service interface {
 		SessionID(ctx context.Context) (response models.SessionResponse, err error)
-		C2BSingleAsync(ctx context.Context, request models.PushRequest)(models.C2BSingleStageAsyncResponse,error)
+		C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error)
 	}
 	// Config contains details initialize in mpesa portal
 	// Applications require the following details:
@@ -128,7 +128,6 @@ type (
 
 	ClientOpt func(client *Client)
 )
-
 
 func NewClient(config *Config, market *Market, platform Platform, opts ...ClientOpt) (*Client, error) {
 
@@ -204,6 +203,7 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 	}
 
 	request := &Request{
+		Method:   http.MethodGet,
 		Type:     GenerateSessionKey,
 		Endpoint: defSessionKeyEndpoint,
 		Payload:  nil,
@@ -225,10 +225,44 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 	return response, nil
 }
 
-func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
-	panic("implement me")
-}
+func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushRequest) (response models.C2BSingleStageAsyncResponse, err error) {
+	sess, err := client.getSessionID()
+	if err != nil {
+		return response, err
+	}
+	token, err := generateEncryptedKey(sess, client.PublicKey)
+	if err != nil {
+		return response, err
+	}
 
+	headers := map[string]string{
+		"Content-Type":  "application/json",
+		"Origin":        "*",
+		"Authorization": fmt.Sprintf("Bearer %s", token),
+	}
+
+	payload := models.C2BSingleStageReq{
+		Amount:                   fmt.Sprintf("%f", request.Amount),
+		Country:                  client.Market.Country,
+		Currency:                 client.Market.Currency,
+		CustomerMSISDN:           request.MSISDN,
+		ServiceProviderCode:      client.ServiceProvideCode,
+		ThirdPartyConversationID: request.ThirdPartyID,
+		TransactionReference:     request.Reference,
+		PurchasedItemsDesc:       request.Desc,
+	}
+
+	re := &Request{
+		Method:   http.MethodPost,
+		Type:     C2BSingleStage,
+		Endpoint: defC2BSingleStageEndpoint,
+		Payload:  payload,
+		Headers:  headers,
+	}
+	err = client.send(ctx, re, &response)
+
+	return response, nil
+}
 
 func (client *Client) send(ctx context.Context, request *Request, v interface{}) error {
 	var req *http.Request

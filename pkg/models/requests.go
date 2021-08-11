@@ -13,9 +13,10 @@ type (
 	}
 
 	PushRequest struct {
-		Reference string  `json:"reference"`
-		Amount    float64 `json:"amount"`
-		MSISDN    string  `json:"msisdn"`
-		Desc      string  `json:"desc"`
+		ThirdPartyID string  `json:"id"`
+		Reference    string  `json:"reference"`
+		Amount       float64 `json:"amount"`
+		MSISDN       string  `json:"msisdn"`
+		Desc         string  `json:"desc"`
 	}
 )
