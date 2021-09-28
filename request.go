@@ -34,16 +34,19 @@ import (
 
 const (
 	GenerateSessionKey RequestType = iota
-	C2BSingleStage
-	B2CSingleStage
-	B2BSingleStage
-	Reversal
-	QueryTxnStatus
-	DirectDebitCreate
-	DirectDebitPayment
+	PushPaySync
+	PushPayAsync
+	DisbursementSync
+	DisbursementAsync
 )
 
 type RequestType int
+
+type Endpoints struct {
+	SessionID string
+	B2C       string
+	C2B       string
+}
 
 type Request struct {
 	Method      string
@@ -52,6 +55,18 @@ type Request struct {
 	Payload     interface{}
 	Headers     map[string]string
 	QueryParams map[string]string
+}
+
+func (t RequestType) HttpMethod() string {
+	switch t {
+	case GenerateSessionKey:
+		return http.MethodGet
+
+	case PushPayAsync,PushPaySync,DisbursementAsync,DisbursementSync:
+		return http.MethodPost
+	}
+
+	return ""
 }
 
 func (t RequestType) name() string {

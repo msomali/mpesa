@@ -30,6 +30,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/techcraftlabs/mpesa/internal"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -59,16 +60,15 @@ type Config struct {
 	BasePath               string
 	APIKey                 string
 	PublicKey              string
-	SessionLifetimeMinutes uint64
+	SessionLifetimeMinutes int64
 	ServiceProvideCode     string
 	TrustedSources         []string
 }
 
 type Client struct {
 	*Config
-	Http              *http.Client
+	Http              *internal.BaseClient
 	DebugMode         bool
-	Logger            io.Writer
 	Market            *Market
 	Platform          Platform
 	encryptedApiKey   *string
@@ -97,7 +97,6 @@ func NewClient(config *Config, market *Market, platform Platform, opts ...Client
 		Config:            config,
 		Http:              defHttpClient,
 		DebugMode:         false,
-		Logger:            defClientLogger,
 		Market:            market,
 		Platform:          platform,
 		encryptedApiKey:   &encryptedKeyStr,

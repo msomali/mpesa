@@ -25,7 +25,7 @@
 package models
 
 type (
-	C2BSingleStageReq struct {
+	C2BSingleStageRequest struct {
 		Amount                   string `json:"input_Amount"`
 		Country                  string `json:"input_Country"`
 		Currency                 string `json:"input_Currency"`
@@ -36,7 +36,7 @@ type (
 		PurchasedItemsDesc       string `json:"input_PurchasedItemsDesc"`
 	}
 
-	B2CSingleStageReq struct {
+	B2CSingleStageRequest struct {
 		Amount                   string `json:"input_Amount"`
 		Country                  string `json:"input_Country"`
 		Currency                 string `json:"input_Currency"`

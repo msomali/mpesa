@@ -33,7 +33,7 @@ import (
 
 type Service interface {
 	SessionID(ctx context.Context) (response models.SessionResponse, err error)
-	C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error)
+	PushPayAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error)
 }
 
 func (client *Client) SessionID(ctx context.Context) (response models.SessionResponse, err error) {
@@ -66,7 +66,7 @@ func (client *Client) SessionID(ctx context.Context) (response models.SessionRes
 	return response, nil
 }
 
-func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushRequest) (response models.C2BSingleStageAsyncResponse, err error) {
+func (client *Client) PushPayAsync(ctx context.Context, request models.PushRequest) (response models.C2BSingleStageAsyncResponse, err error) {
 	sess, err := client.getSessionID()
 	if err != nil {
 		return response, err
@@ -82,7 +82,7 @@ func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushReq
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
-	payload := models.C2BSingleStageReq{
+	payload := models.C2BSingleStageRequest{
 		Amount:                   fmt.Sprintf("%f", request.Amount),
 		Country:                  client.Market.Country,
 		Currency:                 client.Market.Currency,
@@ -95,7 +95,7 @@ func (client *Client) C2BSingleAsync(ctx context.Context, request models.PushReq
 
 	re := &Request{
 		Method:   http.MethodPost,
-		Type:     C2BSingleStage,
+		Type:     PushPaySync,
 		Endpoint: defC2BSingleStageEndpoint,
 		Payload:  payload,
 		Headers:  headers,

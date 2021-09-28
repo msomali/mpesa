@@ -47,14 +47,14 @@ type (
 	}
 )
 
-func (f *FormatAdapter) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
+func (f *FormatAdapter) PushPayAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
 	fmt.Printf("c2b from formatter")
-	return f.Next.C2BSingleAsync(ctx, request)
+	return f.Next.PushPayAsync(ctx, request)
 }
 
-func (l *LoggerAdapter) C2BSingleAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
+func (l *LoggerAdapter) PushPayAsync(ctx context.Context, request models.PushRequest) (models.C2BSingleStageAsyncResponse, error) {
 	l.Logger.Printf("making push payyyyy")
-	return l.Next.C2BSingleAsync(ctx, request)
+	return l.Next.PushPayAsync(ctx, request)
 }
 
 func (f *FormatAdapter) SessionID(ctx context.Context) (response models.SessionResponse, err error) {

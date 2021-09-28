@@ -83,7 +83,7 @@ func main() {
 		Desc:         "demo",
 	}
 	fmt.Printf("reponse error: %s\n", resp.OutputErr)
-	resp2, err := lg.C2BSingleAsync(context.Background(), push)
+	resp2, err := lg.PushPayAsync(context.Background(), push)
 	if err != nil {
 		log.Fatalln(err)
 	}

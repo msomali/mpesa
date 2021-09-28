@@ -103,13 +103,13 @@ func TestClient_C2BSingleAsync(t *testing.T) {
 				sessionID:         tt.fields.sessionID,
 				sessionExpiration: tt.fields.sessionExpiration,
 			}
-			gotResponse, err := client.C2BSingleAsync(tt.args.ctx, tt.args.request)
+			gotResponse, err := client.PushPayAsync(tt.args.ctx, tt.args.request)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("C2BSingleAsync() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("PushPayAsync() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotResponse, tt.wantResponse) {
-				t.Errorf("C2BSingleAsync() gotResponse = %v, want %v", gotResponse, tt.wantResponse)
+				t.Errorf("PushPayAsync() gotResponse = %v, want %v", gotResponse, tt.wantResponse)
 			}
 		})
 	}
