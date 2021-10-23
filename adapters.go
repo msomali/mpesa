@@ -13,9 +13,9 @@ type (
 	}
 )
 
-func (a *requestAdapter) adapt(requestType RequestType, request Request) (interface{}, error) {
+func (a *requestAdapter) adapt(requestType requestType, request Request) (interface{}, error) {
 	amount := math.Floor(request.Amount * 100 / 100)
-	if requestType == PushPay {
+	if requestType == pushPay {
 		response := pushPayRequest{
 			Amount:                   fmt.Sprintf("%0.2f", amount),
 			Country:                  a.market.Country(),
@@ -29,7 +29,7 @@ func (a *requestAdapter) adapt(requestType RequestType, request Request) (interf
 		return response, nil
 	}
 
-	if requestType == Disburse {
+	if requestType == disburse {
 
 		response := disburseRequest{
 			Amount:                   fmt.Sprintf("%0.2f", amount),

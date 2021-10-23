@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	_ base.RequestInformer = (*RequestType)(nil)
+	_ base.RequestInformer = (*requestType)(nil)
 	_ market                   = (*Market)(nil)
 )
 
@@ -18,9 +18,9 @@ const (
 )
 
 const (
-	SessionID RequestType = iota
-	PushPay
-	Disburse
+	sessionID requestType = iota
+	pushPay
+	disburse
 )
 
 const (
@@ -37,7 +37,7 @@ type (
 	}
 	Platform    int
 	Market      int
-	RequestType int
+	requestType int
 )
 
 func MarketFmt(marketString string) Market {
@@ -128,34 +128,34 @@ func (m Market) Description() string {
 	}
 }
 
-func (r RequestType) String() string {
+func (r requestType) String() string {
 
 	return fmt.Sprintf("mno=%s:: group=%s:: request=%s:", r.MNO(), r.Group(), r.Name())
 }
 
-func (r RequestType) Endpoint() string {
+func (r requestType) Endpoint() string {
 	switch r {
 
-	case SessionID:
+	case sessionID:
 		return "/getSession/"
 
-	case PushPay:
+	case pushPay:
 		return "/c2bPayment/singleStage/"
 
-	case Disburse:
+	case disburse:
 		return "/b2cPayment/"
 
 	}
 	return ""
 }
 
-func (r RequestType) Method() string {
+func (r requestType) Method() string {
 	switch r {
 
-	case SessionID:
+	case sessionID:
 		return http.MethodGet
 
-	case PushPay:
+	case pushPay:
 		return http.MethodPost
 
 	default:
@@ -164,24 +164,24 @@ func (r RequestType) Method() string {
 	}
 }
 
-func (r RequestType) Name() string {
+func (r requestType) Name() string {
 	return []string{"get session id", "ussd push",
 		"disbursement"}[r]
 }
 
-func (r RequestType) MNO() string {
+func (r requestType) MNO() string {
 	return "vodacom"
 }
 
-func (r RequestType) Group() string {
+func (r requestType) Group() string {
 	switch r {
-	case SessionID:
+	case sessionID:
 		return "Authorization"
 
-	case PushPay:
+	case pushPay:
 		return "collection"
 
-	case Disburse:
+	case disburse:
 		return "disbursement"
 
 	default:

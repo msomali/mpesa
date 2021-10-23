@@ -127,8 +127,8 @@ func (c *Client) SessionID(ctx context.Context) (response SessionResponse, err e
 	var opts []base.RequestOption
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
-	re := c.makeInternalRequest(SessionID, nil, opts...)
-	res, err := c.base.Do(ctx, SessionID.String(), re, &response)
+	re := c.makeInternalRequest(sessionID, nil, opts...)
+	res, err := c.base.Do(ctx, sessionID.String(), re, &response)
 	if err != nil {
 		return response, err
 	}
@@ -170,7 +170,7 @@ func (c *Client) PushAsync(ctx context.Context, request Request) (response PushA
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
-	payload, err := c.requestAdapter.adapt(PushPay, request)
+	payload, err := c.requestAdapter.adapt(pushPay, request)
 	if err != nil {
 		return PushAsyncResponse{}, err
 	}
@@ -178,13 +178,13 @@ func (c *Client) PushAsync(ctx context.Context, request Request) (response PushA
 	var opts []base.RequestOption
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
-	re := c.makeInternalRequest(PushPay, payload, opts...)
-	res, err := c.base.Do(ctx, PushPay.String(), re, &response)
+	re := c.makeInternalRequest(pushPay, payload, opts...)
+	res, err := c.base.Do(ctx, pushPay.String(), re, &response)
 
 	if err != nil {
 		return response, err
 	}
-	fmt.Printf("pushpay response: %s: %v\n", PushPay.String(), res)
+	fmt.Printf("pushpay response: %s: %v\n", pushPay.String(), res)
 
 	if response.OutputErr != "" {
 		err1 := fmt.Errorf("could not perform c2b single stage request: %s", response.OutputErr)
@@ -210,7 +210,7 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
-	payload, err := c.requestAdapter.adapt(Disburse, request)
+	payload, err := c.requestAdapter.adapt(disburse, request)
 	if err != nil {
 		return DisburseResponse{}, err
 	}
@@ -218,13 +218,13 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 	var opts []base.RequestOption
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
-	re := c.makeInternalRequest(Disburse, payload, opts...)
-	res, err := c.base.Do(ctx, Disburse.String(), re, &response)
+	re := c.makeInternalRequest(disburse, payload, opts...)
+	res, err := c.base.Do(ctx, disburse.String(), re, &response)
 
 	if err != nil {
 		return response, err
 	}
-	fmt.Printf("disburse response: %s: %v\n", Disburse.String(), res)
+	fmt.Printf("disburse response: %s: %v\n", disburse.String(), res)
 
 	if response.OutputErr != "" {
 		err1 := fmt.Errorf("could not perform disburse request: %s", response.OutputErr)
@@ -235,8 +235,10 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 }
 
 func (c *Client) CallbackServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	ctx,cancel := context.WithTimeout(context.Background(),time.Minute)
+	defer cancel()
 	body := new(PushCallbackRequest)
-	_, err := c.rv.Receive(context.TODO(), "mpesa push callback", request, body)
+	_, err := c.rv.Receive(ctx, "mpesa push callback", request, body)
 
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)

@@ -6,21 +6,21 @@ import (
 	"strings"
 )
 
-func (eps *Endpoints) Get(requestType RequestType) string {
+func (eps *Endpoints) Get(requestType requestType) string {
 	switch requestType {
-	case SessionID:
+	case sessionID:
 		return eps.AuthEndpoint
 
-	case PushPay:
+	case pushPay:
 		return eps.PushEndpoint
 
-	case Disburse:
+	case disburse:
 		return eps.DisburseEndpoint
 	}
 	return ""
 }
 
-func (c *Client) makeInternalRequest(requestType RequestType, payload interface{}, opts ...base.RequestOption) *base.Request {
+func (c *Client) makeInternalRequest(requestType requestType, payload interface{}, opts ...base.RequestOption) *base.Request {
 	baseURL := c.Conf.BasePath
 	endpoints := c.Conf.Endpoints
 	edps := endpoints
