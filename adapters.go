@@ -13,7 +13,7 @@ type (
 	}
 )
 
-func (a *requestAdapter) Adapt(requestType RequestType, request Request) (interface{}, error) {
+func (a *requestAdapter) adapt(requestType RequestType, request Request) (interface{}, error) {
 	amount := math.Floor(request.Amount * 100 / 100)
 	if requestType == PushPay {
 		response := pushPayRequest{
@@ -24,7 +24,7 @@ func (a *requestAdapter) Adapt(requestType RequestType, request Request) (interf
 			ServiceProviderCode:      a.serviceProviderCode,
 			ThirdPartyConversationID: request.ThirdPartyID,
 			TransactionReference:     request.Reference,
-			PurchasedItemsDesc:       request.Desc,
+			PurchasedItemsDesc:       request.Description,
 		}
 		return response, nil
 	}
@@ -39,7 +39,7 @@ func (a *requestAdapter) Adapt(requestType RequestType, request Request) (interf
 			ServiceProviderCode:      a.serviceProviderCode,
 			ThirdPartyConversationID: request.ThirdPartyID,
 			TransactionReference:     request.Reference,
-			PaymentItemsDesc:         request.Desc,
+			PaymentItemsDesc:         request.Description,
 		}
 
 		return response, nil

@@ -6,14 +6,14 @@ type (
 		Reference    string  `json:"reference,omitempty"`
 		Amount       float64 `json:"amount,omitempty"`
 		MSISDN       string  `json:"msisdn,omitempty"`
-		Desc         string  `json:"description,omitempty"`
+		Description  string  `json:"description,omitempty"`
 	}
 
 	SessionResponse struct {
-		Code      string `json:"output_ResponseCode,omitempty"`
-		Desc      string `json:"output_ResponseDesc,omitempty"`
-		ID        string `json:"output_SessionID,omitempty"`
-		OutputErr string `json:"output_error,omitempty"`
+		Code        string `json:"output_ResponseCode,omitempty"`
+		Description string `json:"output_ResponseDesc,omitempty"`
+		ID          string `json:"output_SessionID,omitempty"`
+		OutputErr   string `json:"output_error,omitempty"`
 	}
 
 	//pushPayRequest

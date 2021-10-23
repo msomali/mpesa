@@ -3,7 +3,6 @@ package mpesa
 import (
 	"context"
 	"fmt"
-	"github.com/techcraftlabs/mpesa/crypto"
 	"time"
 )
 
@@ -14,7 +13,7 @@ func (c *Client) getEncryptionKey() (string, error) {
 		return *c.encryptedApiKey, nil
 	}
 
-	return crypto.EncryptKey(c.Conf.APIKey, c.Conf.PublicKey)
+	return encryptKey(c.Conf.APIKey, c.Conf.PublicKey)
 }
 
 //checkSessionID examine if there is a session id saved as Client.sessionID

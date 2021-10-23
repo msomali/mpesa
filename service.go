@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/techcraftlabs/base"
-	"github.com/techcraftlabs/mpesa/crypto"
 	"net/http"
 	"time"
 )
@@ -60,8 +59,6 @@ type (
 	Client struct {
 		Conf *Config
 		base *base.Client
-		//Market            Market
-		//Platform          Platform
 		encryptedApiKey   *string
 		sessionID         *string
 		sessionExpiration time.Time
@@ -83,8 +80,6 @@ func NewClient(conf *Config, opts ...ClientOption) *Client {
 	client = &Client{
 		Conf: conf,
 		base: base.NewClient(),
-		//Market:            TanzaniaMarket,
-		//Platform:          SANDBOX,
 		encryptedApiKey:   enc,
 		sessionID:         ses,
 		sessionExpiration: time.Now(),
@@ -164,7 +159,7 @@ func (c *Client) PushAsync(ctx context.Context, request Request) (response PushA
 	if err != nil {
 		return response, err
 	}
-	token, err := crypto.EncryptKey(sess, c.Conf.PublicKey)
+	token, err := encryptKey(sess, c.Conf.PublicKey)
 	if err != nil {
 		return response, err
 	}
@@ -175,7 +170,7 @@ func (c *Client) PushAsync(ctx context.Context, request Request) (response PushA
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
-	payload, err := c.requestAdapter.Adapt(PushPay, request)
+	payload, err := c.requestAdapter.adapt(PushPay, request)
 	if err != nil {
 		return PushAsyncResponse{}, err
 	}
@@ -204,7 +199,7 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 	if err != nil {
 		return response, err
 	}
-	token, err := crypto.EncryptKey(sess, c.Conf.PublicKey)
+	token, err := encryptKey(sess, c.Conf.PublicKey)
 	if err != nil {
 		return response, err
 	}
@@ -215,7 +210,7 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 		"Authorization": fmt.Sprintf("Bearer %s", token),
 	}
 
-	payload, err := c.requestAdapter.Adapt(Disburse, request)
+	payload, err := c.requestAdapter.adapt(Disburse, request)
 	if err != nil {
 		return DisburseResponse{}, err
 	}
@@ -254,6 +249,9 @@ func (c *Client) CallbackServeHTTP(writer http.ResponseWriter, request *http.Req
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	response := base.NewResponse(200, resp)
+	hs := base.WithMoreResponseHeaders(map[string]string{
+		"Content-Type":"application/json",
+	})
+	response := base.NewResponse(200, resp,hs)
 	c.rp.Reply(writer, response)
 }
