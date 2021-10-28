@@ -69,7 +69,7 @@ type (
 	}
 )
 
-func NewClient(conf *Config, opts ...ClientOption) *Client {
+func NewClient(conf *Config, callbacker PushCallbackHandler,opts ...ClientOption) *Client {
 	enc := new(string)
 	ses := new(string)
 
@@ -78,11 +78,13 @@ func NewClient(conf *Config, opts ...ClientOption) *Client {
 	basePath := conf.BasePath
 
 	client = &Client{
-		Conf: conf,
-		base: base.NewClient(),
+		Conf:              conf,
+		base:              base.NewClient(),
 		encryptedApiKey:   enc,
 		sessionID:         ses,
 		sessionExpiration: time.Now(),
+		pushCallbackFunc:  callbacker,
+
 	}
 
 	for _, opt := range opts {
