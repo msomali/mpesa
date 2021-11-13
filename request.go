@@ -26,7 +26,7 @@ func (c *Client) makeInternalRequest(requestType requestType, payload interface{
 	edps := endpoints
 	url := appendEndpoint(baseURL, edps.Get(requestType))
 	method := requestType.Method()
-	return base.NewRequest(method, url, payload, opts...)
+	return base.NewRequest(requestType.String(),method, url, payload, opts...)
 }
 
 func appendEndpoint(url string, endpoint string) string {

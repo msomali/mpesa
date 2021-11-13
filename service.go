@@ -130,7 +130,7 @@ func (c *Client) SessionID(ctx context.Context) (response SessionResponse, err e
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
 	re := c.makeInternalRequest(sessionID, nil, opts...)
-	res, err := c.base.Do(ctx, sessionID.String(), re, &response)
+	res, err := c.base.Do(ctx, re, &response)
 	if err != nil {
 		return response, err
 	}
@@ -181,7 +181,7 @@ func (c *Client) PushAsync(ctx context.Context, request Request) (response PushA
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
 	re := c.makeInternalRequest(pushPay, payload, opts...)
-	res, err := c.base.Do(ctx, pushPay.String(), re, &response)
+	res, err := c.base.Do(ctx,re, &response)
 
 	if err != nil {
 		return response, err
@@ -221,7 +221,7 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
 	re := c.makeInternalRequest(disburse, payload, opts...)
-	res, err := c.base.Do(ctx, disburse.String(), re, &response)
+	res, err := c.base.Dogo(ctx, re, &response)
 
 	if err != nil {
 		return response, err
