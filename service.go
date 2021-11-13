@@ -221,7 +221,7 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
 	re := c.makeInternalRequest(disburse, payload, opts...)
-	res, err := c.base.Dogo(ctx, re, &response)
+	res, err := c.base.Do(ctx, re, &response)
 
 	if err != nil {
 		return response, err
