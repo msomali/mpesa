@@ -57,8 +57,8 @@ type (
 	}
 
 	Client struct {
-		Conf *Config
-		base *base.Client
+		Conf              *Config
+		base              *base.Client
 		encryptedApiKey   *string
 		sessionID         *string
 		sessionExpiration time.Time
@@ -69,7 +69,7 @@ type (
 	}
 )
 
-func NewClient(conf *Config, callbacker PushCallbackHandler,opts ...ClientOption) *Client {
+func NewClient(conf *Config, callbacker PushCallbackHandler, opts ...ClientOption) *Client {
 	enc := new(string)
 	ses := new(string)
 
@@ -84,7 +84,6 @@ func NewClient(conf *Config, callbacker PushCallbackHandler,opts ...ClientOption
 		sessionID:         ses,
 		sessionExpiration: time.Now(),
 		pushCallbackFunc:  callbacker,
-
 	}
 
 	for _, opt := range opts {
@@ -181,7 +180,7 @@ func (c *Client) PushAsync(ctx context.Context, request Request) (response PushA
 	headersOpt := base.WithRequestHeaders(headers)
 	opts = append(opts, headersOpt)
 	re := c.makeInternalRequest(pushPay, payload, opts...)
-	res, err := c.base.Do(ctx,re, &response)
+	res, err := c.base.Do(ctx, re, &response)
 
 	if err != nil {
 		return response, err
@@ -237,7 +236,7 @@ func (c *Client) Disburse(ctx context.Context, request Request) (response Disbur
 }
 
 func (c *Client) CallbackServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	ctx,cancel := context.WithTimeout(context.Background(),time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	body := new(PushCallbackRequest)
 	_, err := c.rv.Receive(ctx, "mpesa push callback", request, body)
@@ -254,8 +253,8 @@ func (c *Client) CallbackServeHTTP(writer http.ResponseWriter, request *http.Req
 		return
 	}
 	hs := base.WithMoreResponseHeaders(map[string]string{
-		"Content-Type":"application/json",
+		"Content-Type": "application/json",
 	})
-	response := base.NewResponse(200, resp,hs)
+	response := base.NewResponse(200, resp, hs)
 	c.rp.Reply(writer, response)
 }

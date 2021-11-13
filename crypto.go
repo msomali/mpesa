@@ -64,4 +64,3 @@ func encryptKey(apiKey, pubKey string) (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
-

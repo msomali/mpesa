@@ -9,7 +9,7 @@ import (
 
 var (
 	_ base.RequestInformer = (*requestType)(nil)
-	_ market                   = (*Market)(nil)
+	_ market               = (*Market)(nil)
 )
 
 const (
