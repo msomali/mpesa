@@ -19,7 +19,6 @@ func WithCallbackHandler(handler PushCallbackHandler) ClientOption {
 func WithApiPlatform(platform Platform) ClientOption {
 	return func(client *Client) {
 		client.Conf.Platform = platform
-
 	}
 }
 
