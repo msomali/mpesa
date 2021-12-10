@@ -16,7 +16,7 @@ type (
 		OutputErr   string `json:"output_error,omitempty"`
 	}
 
-	//pushPayRequest
+	//  pushPayRequest
 	//  Amount	The transaction amount. This amount will be moved from the organization's account to the customer's account.	True	^\d*\.?\d+$	10.00
 	//  CustomerMSISDN	The MSISDN of the customer where funds will be debitted from.	True	^[0-9]{12,14}$	254707161122
 	//  Country	The country of the mobile money platform where the transaction needs happen on.	True	N/A	GHA

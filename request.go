@@ -17,6 +17,7 @@ func (eps *Endpoints) Get(requestType requestType) string {
 	case disburse:
 		return eps.DisburseEndpoint
 	}
+
 	return ""
 }
 
@@ -26,6 +27,7 @@ func (c *Client) makeInternalRequest(requestType requestType, payload interface{
 	edps := endpoints
 	url := appendEndpoint(baseURL, edps.Get(requestType))
 	method := requestType.Method()
+
 	return base.NewRequest(requestType.String(), method, url, payload, opts...)
 }
 
@@ -33,8 +35,8 @@ func appendEndpoint(url string, endpoint string) string {
 	url, endpoint = strings.TrimSpace(url), strings.TrimSpace(endpoint)
 	urlHasSuffix, endpointHasPrefix := strings.HasSuffix(url, "/"), strings.HasPrefix(endpoint, "/")
 
-	bothTrue := urlHasSuffix == true && endpointHasPrefix == true
-	bothFalse := urlHasSuffix == false && endpointHasPrefix == false
+	bothTrue := urlHasSuffix && endpointHasPrefix
+	bothFalse := !urlHasSuffix && !endpointHasPrefix
 	notEqual := urlHasSuffix != endpointHasPrefix
 
 	if notEqual {
@@ -47,6 +49,7 @@ func appendEndpoint(url string, endpoint string) string {
 
 	if bothTrue {
 		endp := strings.TrimPrefix(endpoint, "/")
+
 		return fmt.Sprintf("%s%s", url, endp)
 	}
 

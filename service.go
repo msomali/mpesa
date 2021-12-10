@@ -15,6 +15,7 @@ var (
 
 type (
 	Service interface {
+		QueryTx(ctx context.Context, req QueryTxParams) (QueryTxResponse, error)
 		SessionID(ctx context.Context) (response SessionResponse, err error)
 		PushAsync(ctx context.Context, request Request) (PushAsyncResponse, error)
 		Disburse(ctx context.Context, request Request) (DisburseResponse, error)
@@ -54,6 +55,7 @@ type (
 		AuthEndpoint     string
 		PushEndpoint     string
 		DisburseEndpoint string
+		QueryEndpoint    string
 	}
 
 	Client struct {
@@ -68,6 +70,11 @@ type (
 		rv                base.Receiver
 	}
 )
+
+func (c *Client) QueryTx(ctx context.Context, req QueryTxParams) (QueryTxResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func NewClient(conf *Config, callbacker PushCallbackHandler, opts ...ClientOption) *Client {
 	enc := new(string)
@@ -252,6 +259,7 @@ func (c *Client) CallbackServeHTTP(writer http.ResponseWriter, request *http.Req
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	hs := base.WithMoreResponseHeaders(map[string]string{
 		"Content-Type": "application/json",
 	})

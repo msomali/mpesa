@@ -21,6 +21,7 @@ const (
 	sessionID requestType = iota
 	pushPay
 	disburse
+	queryTxn
 )
 
 const (
@@ -145,8 +146,12 @@ func (r requestType) Endpoint() string {
 	case disburse:
 		return "/b2cPayment/"
 
+	case queryTxn:
+		return "/queryTransactionStatus/"
+
+	default:
+		return ""
 	}
-	return ""
 }
 
 func (r requestType) Method() string {
