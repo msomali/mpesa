@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	_ Service             = (*Client)(nil)
-	_ PushCallbackHandler = (*PushCallbackFunc)(nil)
+	_ Service = (*Client)(nil)
 )
 
 type (
@@ -21,11 +20,6 @@ type (
 		Disburse(ctx context.Context, request Request) (DisburseResponse, error)
 		CallbackServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
-
-	PushCallbackHandler interface {
-		Handle(request PushCallbackRequest) (PushCallbackResponse, error)
-	}
-	PushCallbackFunc func(request PushCallbackRequest) (PushCallbackResponse, error)
 
 	// Config contains details initialize in mpesa portal
 	// Applications require the following details:
@@ -114,10 +108,6 @@ func NewClient(conf *Config, callbacker PushCallbackHandler, opts ...ClientOptio
 	client.rp = rp
 	client.rv = rv
 	return client
-}
-
-func (p PushCallbackFunc) Handle(request PushCallbackRequest) (PushCallbackResponse, error) {
-	return p(request)
 }
 
 func (c *Client) SessionID(ctx context.Context) (response SessionResponse, err error) {
@@ -254,7 +244,7 @@ func (c *Client) CallbackServeHTTP(writer http.ResponseWriter, request *http.Req
 	}
 	reqBody := *body
 
-	resp, err := c.pushCallbackFunc.Handle(reqBody)
+	resp, err := c.pushCallbackFunc.HandleCallback(reqBody)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
