@@ -25,8 +25,12 @@ type (
 	// wallet and revert the funds to the mobile money wallet of the initiating
 	// party of the original transaction.
 	reversal interface {
-		ReverseTx(ctx context.Context, request ReverseTxRequest) (ReverseTxResponse, error)
+		ReverseTx(ctx context.Context, m Mode, request ReverseTxRequest) (ReverseTxResponse, error)
 	}
 
-	ReversalFunc func(ctx context.Context, request ReverseTxRequest) (ReverseTxResponse, error)
+	ReversalFunc func(ctx context.Context, m Mode, request ReverseTxRequest) (ReverseTxResponse, error)
 )
+
+func (f ReversalFunc) ReverseTx(ctx context.Context, m Mode, request ReverseTxRequest) (ReverseTxResponse, error) {
+	return f(ctx, m, request)
+}

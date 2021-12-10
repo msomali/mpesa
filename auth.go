@@ -7,11 +7,11 @@ import (
 )
 
 func (c *Client) getEncryptionKey() (string, error) {
-	isAvailable := c.encryptedApiKey != nil && *c.encryptedApiKey != ""
+	isAvailable := c.encryptedAPIKey != nil && *c.encryptedAPIKey != ""
 
 	// notExpired := client.sessionExpiration.Sub(time.Now()).Minutes() > 1
 	if isAvailable {
-		return *c.encryptedApiKey, nil
+		return *c.encryptedAPIKey, nil
 	}
 
 	return encryptKey(c.Conf.APIKey, c.Conf.PublicKey)

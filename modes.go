@@ -1,7 +1,7 @@
 package mpesa
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -22,7 +22,7 @@ func RequestModeStr(mode string) (Mode, error) {
 	case "async", "asynchronous":
 		return ASYNC, nil
 	default:
-		return 0, errors.New("invalid request mode")
+		return 0, fmt.Errorf("invalid request mode, the mode %s is unknown", mode)
 	}
 }
 
@@ -33,6 +33,6 @@ func RequestModeInt(mode int) (Mode, error) {
 	case 1:
 		return ASYNC, nil
 	default:
-		return 0, errors.New("invalid request mode")
+		return 0, fmt.Errorf("invalid request mode, the mode number %d is unknown use 0(SYNC) or 1(ASYNC)", mode)
 	}
 }

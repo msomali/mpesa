@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	_ Service = (*Client)(nil)
+	_ service = (*Client)(nil)
 )
 
 type (
-	Service interface {
+	service interface {
 		QueryTx(ctx context.Context, req QueryTxParams) (QueryTxResponse, error)
 		SessionID(ctx context.Context) (response SessionResponse, err error)
 		PushAsync(ctx context.Context, request Request) (PushAsyncResponse, error)
@@ -55,7 +55,7 @@ type (
 	Client struct {
 		Conf              *Config
 		base              *base.Client
-		encryptedApiKey   *string
+		encryptedAPIKey   *string
 		sessionID         *string
 		sessionExpiration time.Time
 		pushCallbackFunc  PushCallbackHandler
@@ -81,7 +81,7 @@ func NewClient(conf *Config, callbacker PushCallbackHandler, opts ...ClientOptio
 	client = &Client{
 		Conf:              conf,
 		base:              base.NewClient(),
-		encryptedApiKey:   enc,
+		encryptedAPIKey:   enc,
 		sessionID:         ses,
 		sessionExpiration: time.Now(),
 		pushCallbackFunc:  callbacker,

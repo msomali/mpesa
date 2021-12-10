@@ -47,8 +47,8 @@ type DirectDebitFrequency string
 // The customer is able to view and cancel the Direct Debit mandate from G2 menu accessible via USSD menu
 // or the Smartphone Application.
 type directDebit interface {
-	DirectDebitCreate(ctx context.Context, req DirectDebitCreateRequest) (DirectDebitCreateResponse, error)
-	DirectDebitPay(ctx context.Context, req DirectDebitPayRequest) (DirectDebitPayResponse, error)
+	DirectDebitCreate(ctx context.Context, m Mode, req DirectDebitCreateRequest) (DirectDebitCreateResponse, error)
+	DirectDebitPay(ctx context.Context, m Mode, req DirectDebitPayRequest) (DirectDebitPayResponse, error)
 }
 
 // DirectDebitCreateRequest is the request body for creating a direct debit
