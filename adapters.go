@@ -30,7 +30,6 @@ func (a *requestAdapter) adapt(requestType requestType, request Request) (interf
 	}
 
 	if requestType == disburse {
-
 		response := disburseRequest{
 			Amount:                   fmt.Sprintf("%0.2f", amount),
 			Country:                  a.market.Country(),

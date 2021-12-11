@@ -1,6 +1,9 @@
 package mpesa
 
-import "context"
+import (
+	"context"
+	"net/http"
+)
 
 type (
 	// QueryTxParams is the parameters for querying a transaction
@@ -21,8 +24,10 @@ type (
 	}
 
 	querier interface {
-		QueryTx(ctx context.Context, req QueryTxParams) (QueryTxResponse, error)
+		QueryTx(ctx context.Context, m Mode, req QueryTxParams) (QueryTxResponse, error)
+		QueryCallbackServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 
-	QueryTxFunc func(ctx context.Context, req QueryTxParams) (QueryTxResponse, error)
+	QueryTxFunc       func(ctx context.Context, m Mode, req QueryTxParams) (QueryTxResponse, error)
+	QueryCallbackFunc func(ctx context.Context, req QueryTxParams) (QueryTxResponse, error)
 )

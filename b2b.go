@@ -29,7 +29,7 @@ type B2BResponse struct {
 // • Ad-hoc payment
 // • Business to business transactions
 type b2b interface {
-	B2BPush(ctx context.Context, b2bReq B2BRequest) (B2BResponse, error)
+	B2BPush(ctx context.Context, m Mode, b2bReq B2BRequest) (B2BResponse, error)
 }
 
-type B2BPushFunc func(ctx context.Context, b2bReq B2BRequest) (B2BResponse, error)
+type B2BPushFunc func(ctx context.Context, m Mode, b2bReq B2BRequest) (B2BResponse, error)

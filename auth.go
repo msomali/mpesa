@@ -18,10 +18,10 @@ func (c *Client) getEncryptionKey() (string, error) {
 }
 
 // checkSessionID examine if there is a session id saved as Client.sessionID
-//if it is available it checks if it has already expired or have more than
-//1 minute till expiration date and returns it
-//if the above conditions are not fulfilled it calls Client.SessionID
-//then save it and increment the expiration date
+// if it is available it checks if it has already expired or have more than
+// 1 minute till expiration date and returns it
+// if the above conditions are not fulfilled it calls Client.SessionID
+// then save it and increment the expiration date
 func (c *Client) checkSessionID() (string, error) {
 	sessAvailable := c.sessionID != nil && *c.sessionID != ""
 	sessExpiresAt := c.sessionExpiration
